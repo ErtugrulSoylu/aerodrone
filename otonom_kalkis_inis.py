@@ -11,7 +11,7 @@ connection_string="127.0.0.1:14550"
 vehicle = connect(connection_string,wait_ready=True,timeout=100)
 myDrone = drone(vehicle)
 
-myDrone.arm_and_takeoff(5)
+myDrone.arm_and_takeoff(1)
 
 countdown = 3
 print('Waiting for ', countdown, ' secs..')
