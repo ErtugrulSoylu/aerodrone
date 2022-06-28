@@ -8,6 +8,23 @@ class drone:
     def __init__(self, vehicle):
         self.vehicle = vehicle
         
+    def arm_only(self):
+        print("Basic pre-arm checks")
+        # Don't try to arm until autopilot is ready
+        while not self.vehicle.is_armable:
+            print(" Waiting for vehicle to initialise...")
+            time.sleep(1)
+
+        print("Arming motors")
+        # Copter should arm in GUIDED mode
+        self.vehicle.mode    = VehicleMode("GUIDED")
+        self.vehicle.armed   = True
+
+        # Confirm vehicle armed before attempting to take off
+        while not self.vehicle.armed:
+            print(" Waiting for arming...")
+            time.sleep(1)
+
     def arm_and_takeoff(self, aTargetAltitude):
         print("Basic pre-arm checks")
         # Don't try to arm until autopilot is ready
