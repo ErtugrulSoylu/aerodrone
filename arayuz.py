@@ -10,8 +10,8 @@ import math
 import sys
 from ucus_komutlari import aero
 
-connection_string="127.0.0.1:14550"
-vehicle = connect(connection_string,wait_ready=True,timeout=100)
+connection_string="/dev/ttyAMA0"
+vehicle = connect(connection_string,wait_ready=True,baud=57600)
 ui = Ui_MainWindow()
 
 class Attributes(QObject):
