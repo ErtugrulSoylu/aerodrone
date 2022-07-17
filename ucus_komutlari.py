@@ -15,8 +15,8 @@ class aero:
         self.myDrone.immadiateLanding()
 
     def test(self):
-        self.myDrone.arm_only()
-
+        # self.myDrone.arm_only()
+        self.myDrone.havadaTurlama()
         print('success!')
 
     def otonom_kalkis_inis(self, yukseklik : int = 1, saniye : int = 3):

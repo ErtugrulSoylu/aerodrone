@@ -3,6 +3,14 @@ from dronekit import connect, VehicleMode
 from pymavlink import mavutil
 import math
 import time
+from tokenize import String
+import keras_preprocessing.image
+import tensorflow as tf
+from keras.models import model_from_json
+import cv2
+from keras_preprocessing import image
+import numpy as np
+import os
 
 class drone:
     def __init__(self, vehicle):
@@ -81,13 +89,13 @@ class drone:
             posz - self.vehicle.location.global_relative_frame.alt
         ]
 
-    def in_position(self, posx, posy, posz):
-        ifx = posx > self.vehicle.location.global_relative_frame.lat - 0.3 \
-            and posx < self.vehicle.location.global_relative_frame.lat + 0.3
-        ify = posy > self.vehicle.location.global_relative_frame.lon - 0.3 \
-            and posy < self.vehicle.location.global_relative_frame.lon + 0.3
-        ifz = posz > self.vehicle.location.global_relative_frame.alt - 0.3 \
-            and posz < self.vehicle.location.global_relative_frame.alt + 0.3
+    def in_position(self, posx, posy, posz, loc):
+        ifx = posx > loc.north - 0.3 \
+            and posx < loc.north + 0.3
+        ify = posy > loc.east - 0.3 \
+            and posy < loc.east + 0.3
+        ifz = posz > loc.down - 0.3 \
+            and posz < loc.down + 0.3
         return ifx and ify and ifz
 
     def accelerated_go(self, posx, posy, posz):
@@ -142,3 +150,90 @@ class drone:
             time.sleep(1)
         
         print('Landed')
+
+
+    def tespit(self, model, path):
+        if os.path.isfile(path) is False:
+            return False
+        img = image.load_img(path, target_size=(224,224))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0) / 255
+        return model.predict(x)
+
+    def foto_cek(self, cam):
+        ret, frame = cam.read()
+        if not ret:
+            print("failed to grab frame")
+            return 0
+
+        path = "taken_photo.png"
+        cv2.imwrite(path, frame)
+        print("{} written!".format(path))
+        
+        cam.release()
+        return path
+
+    def goruntu_isleme(self, cam, model):
+        path = self.foto_cek(cam)
+        
+        if path is 0:
+            return False
+        
+        if self.tespit(model, path) is True:
+            loc = self.get_fire_loc(path)
+            self.go_to(loc[0], loc[1], loc[2], 0)
+            print("im here!")
+            return True
+        
+        if os.path.isfile(path):
+            os.remove(path)
+
+        return False
+
+
+    def havadaTurlama(self):
+        model = model_from_json(open("model_new.json", "r").read())
+        model.load_weights("fire_detection_weights.h5")
+        
+        cam = cv2.VideoCapture(0)
+        
+        self.arm_and_takeoff(5)
+        location = self.vehicle.location.local_frame
+        shift = 3
+        
+        while True:
+            self.go_to(location.north + shift, location.east + shift, location.down, 0)
+            while (self.vehicle.location.local_frame.north < location.north + shift - 0.3 \
+                or self.vehicle.location.local_frame.east < location.east + shift - 0.3):
+                time.sleep(1)
+            
+            if self.goruntu_isleme(cam, model):
+                break
+
+            self.go_to(location.north + shift, location.east - shift, location.down, 0)
+            while (self.vehicle.location.local_frame.north < location.north + shift - 0.3 \
+                or self.vehicle.location.local_frame.east > location.east - shift + 0.3):
+                time.sleep(1)
+
+            if self.goruntu_isleme(cam, model):
+                break
+            
+            self.go_to(location.north - shift, location.east - shift, location.down, 0)
+            while (self.vehicle.location.local_frame.north > location.north - shift + 0.3 \
+                or self.vehicle.location.local_frame.east > location.east - shift + 0.3):
+                time.sleep(1)
+            
+            if self.goruntu_isleme(cam, model):
+                break
+
+            self.go_to(location.north - shift, location.east + shift, location.down, 0)
+            while (self.vehicle.location.local_frame.north > location.north - shift + 0.3 \
+                or self.vehicle.location.local_frame.east < location.east + shift - 0.3):
+                time.sleep(1)
+            
+            if self.goruntu_isleme(cam, model):
+                break
+
+            shift *= 1.33
+        cam.release()
+        cv2.destroyAllWindows()

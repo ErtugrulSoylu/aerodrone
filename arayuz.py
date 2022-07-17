@@ -10,9 +10,10 @@ import math
 import sys
 from ucus_komutlari import aero
 
-# connection_string="127.0.0.1:14550"
-connection_string="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
-vehicle = connect(connection_string,wait_ready=True,timeout=100, baud=57600)
+
+connection_string="127.0.0.1:14550"
+# connection_string="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
+vehicle = connect(connection_string,wait_ready=True,timeout=100)
 ui = Ui_MainWindow()
 
 class Attributes(QObject):
@@ -30,7 +31,6 @@ def hizGuncelle(value):
     ui.yatayHiz.display((int)(math.sqrt(value[0]**2 + value[1]**2) * 10) / 10)
 
 def modGuncelle(value):
-    print('haha', value[0])
     ui.ucusModu.setText(value[0])
 
 # Signals
@@ -46,7 +46,7 @@ class MainWindow:
         ui.setupUi(self.main_win)
         self.main_win.m_flag = False
         self.droneThreadFlag = False
-        
+
         # Buttons
         ui.armTestButon.clicked.connect(self.armTestButon)
         ui.otoKalkisButon.clicked.connect(self.otoKalkisButon)
