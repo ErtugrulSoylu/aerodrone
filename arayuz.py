@@ -10,26 +10,34 @@ import math
 import sys
 from ucus_komutlari import aero
 
-connection_string="/dev/ttyAMA0"
-vehicle = connect(connection_string,wait_ready=True,baud=57600)
+# connection_string="127.0.0.1:14550"
+connection_string="/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
+vehicle = connect(connection_string,wait_ready=True,timeout=100, baud=57600)
 ui = Ui_MainWindow()
 
 class Attributes(QObject):
     bataryaGonder = pyqtSignal(list)
     hizGonder = pyqtSignal(list)
+    modGonder = pyqtSignal(list)
 
 def bataryaGuncelle(value):
     ui.CekilenAkim.display(value[0])
     ui.pilSeviyesi.setValue(value[1])
+    ui.Voltaj.display(value[2])
 
 def hizGuncelle(value):
-    ui.dikeyHiz.display(-value[2])
-    ui.yatayHiz.display(math.sqrt(value[0]**2 + value[1]**2))
+    ui.dikeyHiz.display((int)((-value[2]) * 10) / 10)
+    ui.yatayHiz.display((int)(math.sqrt(value[0]**2 + value[1]**2) * 10) / 10)
+
+def modGuncelle(value):
+    print('haha', value[0])
+    ui.ucusModu.setText(value[0])
 
 # Signals
 attr = Attributes()
 attr.bataryaGonder.connect(bataryaGuncelle)
 attr.hizGonder.connect(hizGuncelle)
+attr.modGonder.connect(modGuncelle)
 
 class MainWindow:
     def __init__(self):
@@ -45,7 +53,7 @@ class MainWindow:
         ui.acilInisButon.clicked.connect(self.acilInisButon)
         ui.yukselButon.clicked.connect(self.yukselButon)
         
-        ui.guidedButon.clicked.connect(self.guidedMode)
+        ui.guidedButon.clicked.connect(self.guidedMode)     
         ui.loiterButon.clicked.connect(self.loiterMode)
         ui.posholdButon.clicked.connect(self.pos_holdMode)
         ui.landButon.clicked.connect(self.landMode)
@@ -82,7 +90,7 @@ class MainWindow:
 
     @vehicle.on_attribute('battery')
     def bataryaOku(self, attr_name, value):
-        attr.bataryaGonder.emit([value.current, value.level])
+        attr.bataryaGonder.emit([value.current, value.level, value.voltage])
     
     def ucusSuresiGuncelle(self):
         return
@@ -93,8 +101,9 @@ class MainWindow:
     def kameraGuncelle(self, image):
         return
 
-    def modGuncelle(self, image):
-        return
+    @vehicle.on_attribute('mode')
+    def modOku(self, attr_name, value):
+        attr.modGonder.emit([value.name])
 
     ############################################################################################################
     ######################################            BUTTONS            #######################################
@@ -152,7 +161,7 @@ class MainWindow:
         self.drone.vehicle.mode = VehicleMode('LAND')
 
     def pos_holdMode(self):
-        self.drone.vehicle.mode = VehicleMode('POS_HOLD')
+        self.drone.vehicle.mode = VehicleMode('POSHOLD')
     
 
 if __name__ == '__main__':
