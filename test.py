@@ -12,4 +12,4 @@ vehicle = connect(connection_string,wait_ready=True,timeout=100)
 
 drone = aero(vehicle)
 
-drone.test()
+drone.video()
